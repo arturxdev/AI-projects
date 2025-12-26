@@ -26,7 +26,7 @@ Estos proyectos están diseñados bajo el principio de que la mejor manera de ap
 
 | Nombre del Proyecto                           | Dificultad      | Link                                      |
 | --------------------------------------------- | --------------- | ----------------------------------------- |
-| 🤖 Agente RAG - Asistente que Lee PDFs        | 🟢 Principiante | [Ver Tutorial](./01-agente-rag/README.md) |
+| 🤖 Agente RAG - Asistente que Lee PDFs        | 🟢 Principiante | [Ver Tutorial](./01-pdf-agente-rag/README.md) |
 | 💬 Chatbot con Memoria Conversacional         | 🟡 Intermedio   | 🔜 Próximamente                           |
 | 🖼️ Clasificador de Imágenes con CNN           | 🟡 Intermedio   | 🔜 Próximamente                           |
 | 😊 Análisis de Sentimientos en Redes Sociales | 🟢 Principiante | 🔜 Próximamente                           |
