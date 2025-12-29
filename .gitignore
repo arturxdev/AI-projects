@@ -1,0 +1,4 @@
+# Ignora archivos y carpetas en cualquier subdirectorio también
+**/.env
+**/chroma_db/
+**/.venv/

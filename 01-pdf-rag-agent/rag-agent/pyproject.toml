@@ -1,5 +1,5 @@
 [project]
-name = "agent"
+name = "rag-agent"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -7,7 +7,10 @@ requires-python = ">=3.10"
 dependencies = [
     "chromadb>=1.4.0",
     "langchain>=1.2.0",
+    "langchain-chroma>=1.1.0",
+    "langchain-community>=0.4.1",
     "langchain-openai>=1.1.6",
+    "langchain-text-splitters>=1.1.0",
     "pypdf>=6.5.0",
     "python-dotenv>=1.2.1",
 ]

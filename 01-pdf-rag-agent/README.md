@@ -17,13 +17,13 @@ Vas a crear tu primer agente de inteligencia artificial capaz de **leer document
 
 ---
 
-## PASO 0: Instala uv (el manejador de paquetes moderno)
+## PASO 1: Instala uv (el manejador de paquetes moderno)
 
 ### ¿Qué es uv?
 
 Es un manejador de paquetes de Python **ultra rápido** creado por Astral (los creadores de Ruff). Es hasta 100x más rápido que pip tradicional.
 
-### Instala uv:
+### Instala uv
 
 **Windows (PowerShell):**
 
@@ -37,7 +37,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Verifica la instalación:
+### Verifica la instalación
 
 ```bash
 uv --version
@@ -47,12 +47,12 @@ uv --version
 
 ---
 
-## PASO 1: Configura tu proyecto con uv
+## PASO 2: Configura tu proyecto con uv
 
 ```bash
 # Crea la carpeta del proyecto
-mkdir mi-primer-agente-rag
-cd mi-primer-agente-rag
+mkdir rag-agent
+cd rag-agent
 
 # Inicializa el proyecto con uv
 uv init
@@ -68,7 +68,7 @@ uv init
 
 ---
 
-## PASO 2: Instala las librerías necesarias con uv
+## PASO 3: Instala las librerías necesarias con uv
 
 ### ¿Qué harás?
 
@@ -82,17 +82,17 @@ Instalar todas las herramientas que tu agente necesita usando uv.
 - **pypdf**: Lector de archivos PDF
 - **python-dotenv**: Manejo seguro de tu API Key
 
-### Comando:
+### Comando
 
 ```bash
-uv add langchain langchain-openai chromadb pypdf python-dotenv
+uv add chromadb langchain langchain-chroma langchain-community langchain-openai langchain-text-splitters pypdf python-dotenv
 ```
 
 ![Install dependencies](/images/install-dep.gif)
 
 ---
 
-## PASO 3: Protege tu API Key
+## PASO 4: Protege tu API Key
 
 ### ¿Qué harás?
 
@@ -103,6 +103,8 @@ Crear un archivo `.env` para guardar tu API Key de forma segura.
 **Nunca debes compartir tu API Key públicamente.** Usar `.env` evita que accidentalmente la subas a GitHub.
 
 ### Crea o abre .gitignore
+
+pega en ese archivo el siguiente contenido
 
 `.gitignore`
 
@@ -116,7 +118,7 @@ chroma_db/
 
 Tu archivo debe verse asi:
 
-### Crea o abre `.env` y agrega:
+### Crea o abre `.env` y agrega
 
 ```
 OPENAI_API_KEY=tu-api-key-aqui
@@ -130,11 +132,15 @@ si no sabes como crear tu api key aca te dejo un [video](https://www.youtube.com
 
 ---
 
-## PASO 4: Importa las librerías
+## PASO 5: Cargar el pdf
+
+Aqui necesitas tu archivo pdf de donde se van hacer las preguntas, puedes tomar mi archivo .
+
+este archivo debe estar posicionado en la raiz del proyecto
 
 ### ¿Qué harás?
 
-Crear el archivo `agente_rag.py` e importar todas las herramientas.
+Crear el archivo `main.py`
 
 ### ¿Por qué cada import?
 
@@ -146,33 +152,19 @@ Crear el archivo `agente_rag.py` e importar todas las herramientas.
 - `Chroma`: La base de datos vectorial
 - `RetrievalQA`: La cadena RAG completa
 
-### Código:
+### Código
 
 ```python
 import os
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain.chains import RetrievalQA
-```
+from langchain_chroma import Chroma
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.tools import tool
+from langchain.chat_models import init_chat_model
+from langchain.agents import create_agent
 
----
-
-## PASO 5: Carga tu API Key
-
-### ¿Qué harás?
-
-Leer la API Key del archivo `.env` de forma segura.
-
-### ¿Por qué?
-
-Necesitas autenticarte con OpenAI para usar GPT. Sin esto, el agente no funcionará.
-
-### Código:
-
-```python
 # Cargar variables del archivo .env
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -183,41 +175,44 @@ if not api_key:
     exit()
 
 print("✅ API Key cargada correctamente")
+
+# Configuración
+ruta_pdf = "./pdf prueba.pdf"
+persist_directory = "./chroma_db"
+
+# Inicializar embeddings
+embeddings = OpenAIEmbeddings()
+
+# Verificar si ya existe la base de datos
+if os.path.exists(persist_directory) and os.listdir(persist_directory):
+    print("\n♻️  Base de conocimiento existente encontrada, cargando...")
+    vectorstore = Chroma(
+        persist_directory=persist_directory, embedding_function=embeddings
+    )
+    print("✅ Base de conocimiento cargada desde disco")
+else:
+    print("\n📄 No se encontró base de conocimiento, procesando PDF...")
+    print(f"📄 Cargando el PDF: {ruta_pdf}")
+
+    try:
+        loader = PyPDFLoader(ruta_pdf)
+        documentos = loader.load()
+        print(f"✅ PDF cargado: {len(documentos)} páginas encontradas")
+    except Exception as e:
+        print(f"❌ Error al cargar el PDF: {e}")
+        exit()
+
 ```
 
-**Esto previene errores si olvidaste configurar el `.env`.**
+## PASO 6: Divide el texto en chunks
 
----
-
-## PASO 6: Carga el PDF
-
-### Código:
+### Código
 
 ```python
-print("\n📄 Cargando el PDF...")
-ruta_pdf = input("Escribe la ruta de tu PDF: ")
-
-try:
-    loader = PyPDFLoader(ruta_pdf)
-    documentos = loader.load()
-    print(f"✅ PDF cargado: {len(documentos)} páginas encontradas")
-except Exception as e:
-    print(f"❌ Error al cargar el PDF: {e}")
-    exit()
-```
-
-## PASO 7: Divide el texto en chunks
-
-### Código:
-
-```python
-print("\n✂️ Dividiendo el documento en partes más pequeñas...")
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200
-)
-chunks = text_splitter.split_documents(documentos)
-print(f"✅ Documento dividido en {len(chunks)} chunks")
+    print("\n✂️ Dividiendo el documento en partes más pequeñas...")
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_documents(documentos)
+    print(f"✅ Documento dividido en {len(chunks)} chunks")
 ```
 
 - `chunk_size=1000`: Cada pedazo tiene máximo 1000 caracteres
@@ -229,108 +224,120 @@ print(f"✅ Documento dividido en {len(chunks)} chunks")
 
 ---
 
-## PASO 8: Crea embeddings y la base de datos vectorial
-
-### ¿Qué harás?
-
-Convertir cada chunk en un vector (lista de números) y guardarlo en ChromaDB.
-
-### ¿Por qué?
-
-Los embeddings representan el **significado** del texto como números. ChromaDB busca chunks con significados similares a tu pregunta usando matemáticas.
-
-**Ejemplo:** "Python programming" y "codificación en Python" tienen vectores muy parecidos aunque las palabras sean diferentes.
-
-### Código:
+## PASO 7: Crea embeddings y la base de datos vectorial
 
 ```python
-print("\n🧠 Creando la base de conocimiento...")
-embeddings = OpenAIEmbeddings()
-vectorstore = Chroma.from_documents(
-    documents=chunks,
-    embedding=embeddings,
-    persist_directory="./chroma_db"
-)
-print("✅ Base de conocimiento creada")
+    print("\n🧠 Creando la base de conocimiento...")
+    vectorstore = Chroma.from_documents(
+        documents=chunks, embedding=embeddings, persist_directory=persist_directory
+    )
+    print("✅ Base de conocimiento creada y guardada")
 ```
 
 **Esto toma 10-30 segundos. Se crea una carpeta `chroma_db` con tu base de datos.**
 
 ---
 
-## PASO 9: Inicializa el modelo GPT
-
-### ¿Qué harás?
-
-Configurar el modelo de lenguaje que responderá las preguntas.
+## PASO 8: Inicializa el modelo GPT
 
 ### ¿Por qué estos parámetros?
 
 - `model="gpt-3.5-turbo"`: Modelo rápido y económico (puedes usar gpt-4 si quieres)
 - `temperature=0`: Respuestas precisas y consistentes (0 = menos creativo, 1 = más creativo)
 
-### Código:
+### Código
 
 ```python
 print("\n🤖 Inicializando el modelo GPT...")
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+@tool(response_format="content_and_artifact")
+def retrieve_context(query: str):
+    """Retrieve information to help answer a query."""
+    retrieved_docs = vectorstore.similarity_search(query, k=2)
+    serialized = "\n\n".join(
+        (f"Source: {doc.metadata}\nContent: {doc.page_content}")
+        for doc in retrieved_docs
+    )
+    return serialized, retrieved_docs
+
+
+tools = [retrieve_context]
+prompt = (
+    "Tienes acceso a una tool que te da informacion de un pdf , responde apartir de esa information "
+    "Usa la tool para responder las dudas del usuario, se claro y conciso."
+)
+model = init_chat_model("gpt-4.1")
+agent = create_agent(model, tools, system_prompt=prompt)
 ```
 
 ---
 
-## PASO 10: Crea la cadena RAG
+## PASO 9: Probar el agente
 
 ### ¿Qué harás?
 
-Conectar el modelo GPT con tu base de datos vectorial.
-
-### ¿Por qué?
-
-Aquí es donde sucede la magia del RAG:
-
-1. Tu pregunta se convierte en vector
-2. ChromaDB busca los 3 chunks más similares (`k=3`)
-3. GPT recibe tu pregunta + esos 3 chunks como contexto
-4. GPT responde basándose en ESE contenido específico
-
-### Código:
+vamos a probar el agente para validar que esta conectado correctamente
 
 ```python
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=vectorstore.as_retriever(search_kwargs={"k": 3})
-)
+query = "Que fue lo que paso con softbank el dia de hoy"
 
-print("✅ ¡Agente RAG listo!")
+res = agent.invoke({"messages": [("user", query)]})
+print(res["messages"][0].pretty_print())
+print(res["messages"][-1].pretty_print())
 ```
 
-**`chain_type="stuff"` significa que "mete" todos los chunks recuperados en el prompt.**
+Una vez ejecutada la prueba comenta, las tres líneas anteriores solo era para probar
+
+ejecuta el script para validar el funcionamiento
+
+```shell
+uv run main.py
+```
+
+Te debería dar un resultado como este
+
+```shell
+✅ API Key cargada correctamente
+
+📄 No se encontró base de conocimiento, procesando PDF...
+📄 Cargando el PDF: ./pdf prueba.pdf
+✅ PDF cargado: 2 páginas encontradas
+
+✂️  Dividiendo el documento en partes más pequeñas...
+✅ Documento dividido en 8 chunks
+
+🧠 Creando la base de conocimiento...
+✅ Base de conocimiento creada y guardada
+
+🤖 Inicializando el modelo GPT...
+================================ Human Message =================================
+
+Que fue lo que paso con softbank el dia de hoy
+None
+================================== Ai Message ==================================
+
+Hoy, SoftBank anunció la adquisición definitiva de DigitalBridge Group por aproximadamente 4.000 millones de dólares. Este movimiento estratégico tiene como principal objetivo escalar la infraestructura de inteligencia artificial de próxima generación. Con la compra, SoftBank busca expandir su capacidad en centros de datos y conectividad, elementos cruciales para soportar la creciente demanda de cómputo necesaria para los modelos de lenguaje a gran escala que han dominado el 2025.
+
+Masayoshi Son, líder de SoftBank, refuerza así su apuesta por una "superinteligencia artificial" que requiere una sólida base física y global para operar sin latencia.
+None
+```
 
 ---
 
-## PASO 11: Loop de preguntas
+## PASO 10: Loop de preguntas
 
 ### ¿Qué harás?
 
 Crear un bucle interactivo donde puedes hacer preguntas ilimitadas.
-
-### ¿Por qué?
-
-Permite conversar con tu documento de forma natural. Escribe preguntas, obtén respuestas, repite.
-
-### Código:
+Para esto comenta, las tres líneas anteriores solo era para probar
 
 ```python
-print("\n" + "="*60)
 print("🎉 ¡TU AGENTE RAG ESTÁ FUNCIONANDO!")
-print("="*60)
 print("Escribe 'salir' para terminar\n")
 
 while True:
     pregunta = input("💬 Tu pregunta: ")
 
-    if pregunta.lower() in ['salir', 'exit', 'quit']:
+    if pregunta.lower() in ["salir", "exit", "quit"]:
         print("\n👋 ¡Hasta luego!")
         break
 
@@ -340,92 +347,112 @@ while True:
 
     print("\n🔍 Buscando en el documento...")
     try:
-        respuesta = qa_chain.invoke({"query": pregunta})
-        print(f"\n🤖 Respuesta:\n{respuesta['result']}\n")
-        print("-" * 60 + "\n")
+        respuesta = agent.invoke({"messages": [("user", pregunta)]})
+        print(respuesta["messages"][-1].pretty_print())
     except Exception as e:
         print(f"❌ Error al procesar la pregunta: {e}\n")
+
 ```
 
 ---
 
 ## 🎯 CÓDIGO COMPLETO
 
-Crea un archivo `agente_rag.py` y copia todo esto:
-
 ```python
 import os
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain.chains import RetrievalQA
+from langchain_chroma import Chroma
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.tools import tool
+from langchain.chat_models import init_chat_model
+from langchain.agents import create_agent
 
-# PASO 1: Cargar la API Key
+# Cargar variables del archivo .env
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
+# Verificar que existe
 if not api_key:
     print("❌ Error: No se encontró OPENAI_API_KEY en el archivo .env")
     exit()
 
 print("✅ API Key cargada correctamente")
 
-# PASO 2: Cargar el PDF
-print("\n📄 Cargando el PDF...")
-ruta_pdf = input("Escribe la ruta de tu PDF: ")
+# Configuración
+ruta_pdf = "./pdf prueba.pdf"
+persist_directory = "./chroma_db"
 
-try:
-    loader = PyPDFLoader(ruta_pdf)
-    documentos = loader.load()
-    print(f"✅ PDF cargado: {len(documentos)} páginas encontradas")
-except Exception as e:
-    print(f"❌ Error al cargar el PDF: {e}")
-    exit()
-
-# PASO 3: Dividir el texto en chunks
-print("\n✂️ Dividiendo el documento en partes más pequeñas...")
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=200
-)
-chunks = text_splitter.split_documents(documentos)
-print(f"✅ Documento dividido en {len(chunks)} chunks")
-
-# PASO 4: Crear embeddings y la base de datos vectorial
-print("\n🧠 Creando la base de conocimiento...")
+# Inicializar embeddings
 embeddings = OpenAIEmbeddings()
-vectorstore = Chroma.from_documents(
-    documents=chunks,
-    embedding=embeddings,
-    persist_directory="./chroma_db"
-)
-print("✅ Base de conocimiento creada")
 
-# PASO 5: Crear el modelo de lenguaje
+# Verificar si ya existe la base de datos
+if os.path.exists(persist_directory) and os.listdir(persist_directory):
+    print("\n♻️  Base de conocimiento existente encontrada, cargando...")
+    vectorstore = Chroma(
+        persist_directory=persist_directory, embedding_function=embeddings
+    )
+    print("✅ Base de conocimiento cargada desde disco")
+else:
+    print("\n📄 No se encontró base de conocimiento, procesando PDF...")
+    print(f"📄 Cargando el PDF: {ruta_pdf}")
+
+    try:
+        loader = PyPDFLoader(ruta_pdf)
+        documentos = loader.load()
+        print(f"✅ PDF cargado: {len(documentos)} páginas encontradas")
+    except Exception as e:
+        print(f"❌ Error al cargar el PDF: {e}")
+        exit()
+
+    print("\n✂️ Dividiendo el documento en partes más pequeñas...")
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_documents(documentos)
+    print(f"✅ Documento dividido en {len(chunks)} chunks")
+
+    print("\n🧠 Creando la base de conocimiento...")
+    vectorstore = Chroma.from_documents(
+        documents=chunks, embedding=embeddings, persist_directory=persist_directory
+    )
+    print("✅ Base de conocimiento creada y guardada")
+
+
 print("\n🤖 Inicializando el modelo GPT...")
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+@tool(response_format="content_and_artifact")
+def retrieve_context(query: str):
+    """Retrieve information to help answer a query."""
+    retrieved_docs = vectorstore.similarity_search(query, k=2)
+    serialized = "\n\n".join(
+        (f"Source: {doc.metadata}\nContent: {doc.page_content}")
+        for doc in retrieved_docs
+    )
+    return serialized, retrieved_docs
 
-# PASO 6: Crear la cadena RAG
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=vectorstore.as_retriever(search_kwargs={"k": 3})
+
+tools = [retrieve_context]
+prompt = (
+    "Tienes acceso a una tool que te da informacion de un pdf , responde apartir de esa information "
+    "Usa la tool para responder las dudas del usuario, se claro y conciso."
 )
+model = init_chat_model("gpt-4.1")
+agent = create_agent(model, tools, system_prompt=prompt)
 
-print("✅ ¡Agente RAG listo!")
 
-# PASO 7: Loop de preguntas
-print("\n" + "="*60)
+query = "Que fue lo que paso con softbank el dia de hoy"
+
+res = agent.invoke({"messages": [("user", query)]})
+print(res["messages"][0].pretty_print())
+print(res["messages"][-1].pretty_print())
+
+
 print("🎉 ¡TU AGENTE RAG ESTÁ FUNCIONANDO!")
-print("="*60)
 print("Escribe 'salir' para terminar\n")
 
 while True:
     pregunta = input("💬 Tu pregunta: ")
 
-    if pregunta.lower() in ['salir', 'exit', 'quit']:
+    if pregunta.lower() in ["salir", "exit", "quit"]:
         print("\n👋 ¡Hasta luego!")
         break
 
@@ -435,9 +462,8 @@ while True:
 
     print("\n🔍 Buscando en el documento...")
     try:
-        respuesta = qa_chain.invoke({"query": pregunta})
-        print(f"\n🤖 Respuesta:\n{respuesta['result']}\n")
-        print("-" * 60 + "\n")
+        respuesta = agent.invoke({"messages": [("user", pregunta)]})
+        print(respuesta["messages"][-1].pretty_print())
     except Exception as e:
         print(f"❌ Error al procesar la pregunta: {e}\n")
 ```
@@ -446,63 +472,29 @@ while True:
 
 ## ▶️ Ejecuta tu agente con uv
 
-### Opción 1: Ejecución directa
-
 ```bash
-uv run agente_rag.py
+uv run main.py
 ```
 
-**uv automáticamente:**
-
-- Activa el entorno virtual
-- Verifica que todas las dependencias estén instaladas
-- Ejecuta tu script
-
-### Opción 2: Ejecutar en el entorno virtual
-
-```bash
-# Activa el entorno (si quieres trabajar interactivamente)
-# Windows:
-.venv\Scripts\activate
-# Mac/Linux:
-source .venv/bin/activate
-
-# Luego ejecuta normalmente
-python agente_rag.py
-```
-
-### Ejemplo de uso:
+### Ejemplo de uso
 
 ```
 ✅ API Key cargada correctamente
 
-📄 Cargando el PDF...
-Escribe la ruta de tu PDF: manual_python.pdf
-✅ PDF cargado: 10 páginas encontradas
-
-✂️ Dividiendo el documento en partes más pequeñas...
-✅ Documento dividido en 45 chunks
-
-🧠 Creando la base de conocimiento...
-✅ Base de conocimiento creada
+♻️   Base de conocimiento existente encontrada, cargando...
+✅ Base de conocimiento cargada desde disco
 
 🤖 Inicializando el modelo GPT...
-✅ ¡Agente RAG listo!
-
-============================================================
 🎉 ¡TU AGENTE RAG ESTÁ FUNCIONANDO!
-============================================================
 Escribe 'salir' para terminar
 
-💬 Tu pregunta: ¿De qué trata este documento?
+💬 Tu pregunta: que compro nvidia?
 
 🔍 Buscando en el documento...
+================================== Ai Message ==================================
 
-🤖 Respuesta:
-Este documento es un manual de Python que cubre los fundamentos del lenguaje...
-
-------------------------------------------------------------
-
+Nvidia compró una participación superior al 4% en Intel, por la que desembolsó 5.000 millones de dólares. Esta operación forma parte de una reestructuración financiera respaldada por SoftBank y el gobierno de EE. UU. La alianza técnica y financiera entre ambas empresas busca asegurar que Intel continúe fabricando semiconductores de vanguardia, mientras que Nvidia garantiza una cadena de suministro de chips de inferencia más estable.
+None
 💬 Tu pregunta: salir
 
 👋 ¡Hasta luego!
