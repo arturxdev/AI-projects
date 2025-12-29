@@ -1,3 +1,5 @@
+![imagen logo](./images/logo.png)
+
 # 🚀 Proyectos de IA para Practicar Tus Habilidades
 
 Bienvenido a mi repositorio de proyectos prácticos de Inteligencia Artificial. Aquí encontrarás tutoriales paso a paso para construir aplicaciones reales de IA.
@@ -24,18 +26,18 @@ Estos proyectos están diseñados bajo el principio de que la mejor manera de ap
 
 ## 📚 Tabla de Proyectos
 
-| Nombre del Proyecto                           | Dificultad      | Link                                      |
-| --------------------------------------------- | --------------- | ----------------------------------------- |
-| 🤖 Agente RAG - Asistente que Lee PDFs        | 🟢 Principiante | [Ver Tutorial](./01-pdf-agente-rag/README.md) |
-| 💬 Chatbot con Memoria Conversacional         | 🟡 Intermedio   | 🔜 Próximamente                           |
-| 🖼️ Clasificador de Imágenes con CNN           | 🟡 Intermedio   | 🔜 Próximamente                           |
-| 😊 Análisis de Sentimientos en Redes Sociales | 🟢 Principiante | 🔜 Próximamente                           |
-| 🎯 Sistema de Recomendaciones                 | 🟡 Intermedio   | 🔜 Próximamente                           |
-| 📊 Dashboard de Análisis de Datos             | 🟢 Principiante | 🔜 Próximamente                           |
-| 🎤 Transcriptor de Audio con Whisper          | 🟢 Principiante | 🔜 Próximamente                           |
-| 🔗 API REST con FastAPI + IA                  | 🟡 Intermedio   | 🔜 Próximamente                           |
-| 🧠 Fine-tuning de Modelos de Lenguaje         | 🔴 Avanzado     | 🔜 Próximamente                           |
-| 🔍 Buscador Semántico con Embeddings          | 🟡 Intermedio   | 🔜 Próximamente                           |
+| Nombre del Proyecto                           | Dificultad      | Link                                         |
+| --------------------------------------------- | --------------- | -------------------------------------------- |
+| 🤖 Agente RAG - Asistente que Lee PDFs        | 🟢 Principiante | [Ver Tutorial](./01-pdf-rag-agent/README.md) |
+| 💬 Chatbot con Memoria Conversacional         | 🟡 Intermedio   | 🔜 Próximamente                              |
+| 🖼️ Clasificador de Imágenes con CNN           | 🟡 Intermedio   | 🔜 Próximamente                              |
+| 😊 Análisis de Sentimientos en Redes Sociales | 🟢 Principiante | 🔜 Próximamente                              |
+| 🎯 Sistema de Recomendaciones                 | 🟡 Intermedio   | 🔜 Próximamente                              |
+| 📊 Dashboard de Análisis de Datos             | 🟢 Principiante | 🔜 Próximamente                              |
+| 🎤 Transcriptor de Audio con Whisper          | 🟢 Principiante | 🔜 Próximamente                              |
+| 🔗 API REST con FastAPI + IA                  | 🟡 Intermedio   | 🔜 Próximamente                              |
+| 🧠 Fine-tuning de Modelos de Lenguaje         | 🔴 Avanzado     | 🔜 Próximamente                              |
+| 🔍 Buscador Semántico con Embeddings          | 🟡 Intermedio   | 🔜 Próximamente                              |
 
 ---
 

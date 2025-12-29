@@ -1,3 +1,5 @@
+![imagen logo](/images/logo.png)
+
 # Tu Primer Agente RAG: Construye un Asistente IA que Lee PDFs
 
 ## ¿Qué vas a construir?
